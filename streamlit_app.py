@@ -37,21 +37,23 @@ except URLError as e:
   streamlit.error()
 
 streamlit.stop()
-my_cnx = snowflake.connector.connect(**streamlit.secrets["snowflake"])
-my_cur = my_cnx.cursor()
-my_cur.execute("select * from pc_rivery_db.public.fruit_load_list")
-my_data_row = my_cur.fetchall()
+
+def get_fruit_load_list():
+  with my_cnx.cursor() as my_cur:
+    my_cur.execute("select * from pc_rivery_db.public.fruit_load_list")
+    return my_cur.fetchall()
+
 streamlit.header("The fruit load list contains:")
-my_data_row_df = streamlit.dataframe(my_data_row)
+
+def insert_row_snowflake(new_fruit):
+  with my_cnx.cursor() as my_cur:
+    my_cur.execute(f"""insert into pc_rivery_db.public.fruit_load_list values ('{added_fruit}')""")
+    return 'Thanks for adding' + added_fruit
 
 # add fruit to dataframe
 added_fruit = streamlit.text_input('What fruit would you like to add?')
-try:
-  if not added_fruit :
-    streamlit.error("Please select a fruit to add.")
-  else:
-    my_cur.execute(f"""insert into pc_rivery_db.public.fruit_load_list values ('{added_fruit}')""")
-    my_data_row = my_cur.fetchall()
-    streamlit.write('Thanks for adding',added_fruit)
-except URLError as e:
-  streamlit.error()
+
+if streamlit.button('Add Fruit to the List'):
+  my_cnx = snowflake.connector.connect(**streamlit.secrets["snowflake"])
+  my_data_rows = insert_row_snowflake(added_fruit)
+  streamlit.text(my_data_rows)
